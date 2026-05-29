@@ -1779,6 +1779,8 @@ function renderNews(routeId){
 // ══════════════════════════════
 // AI CHAT
 // ══════════════════════════════
+const CONTACT_EMAIL = 'taegyeongfighting@gmail.com';
+
 function appendChatMsg(role, text) {
   const chatWin = document.getElementById('chat-window');
   const div = document.createElement('div');
@@ -1789,6 +1791,26 @@ function appendChatMsg(role, text) {
   } else {
     div.innerHTML = `<div class="chat-av ai-av">AI</div><div class="chat-bubble ai-b">${safeText}</div>`;
   }
+  chatWin.appendChild(div);
+  chatWin.scrollTop = chatWin.scrollHeight;
+}
+
+function appendEmailBtn(subject) {
+  const chatWin = document.getElementById('chat-window');
+  const subj = encodeURIComponent(subject || 'RouteIQ 문의');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `
+    <div class="chat-av ai-av" style="font-size:14px">✉️</div>
+    <div class="chat-bubble ai-b" style="background:rgba(55,138,221,0.06);border-color:rgba(55,138,221,0.3)">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">담당자에게 직접 문의하시겠어요?</div>
+      <a href="mailto:${CONTACT_EMAIL}?subject=${subj}"
+         style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:rgba(55,138,221,0.15);border:0.5px solid rgba(55,138,221,0.4);border-radius:8px;color:#88bbff;font-size:12px;text-decoration:none;font-weight:500;"
+         onmouseover="this.style.background='rgba(55,138,221,0.28)'"
+         onmouseout="this.style.background='rgba(55,138,221,0.15)'">
+        ✉️ 이메일로 문의하기
+      </a>
+    </div>`;
   chatWin.appendChild(div);
   chatWin.scrollTop = chatWin.scrollHeight;
 }
@@ -1819,10 +1841,18 @@ async function sendChat() {
     });
     const data = await res.json();
     document.getElementById('chat-typing')?.remove();
-    appendChatMsg('ai', data.reply || '응답을 받을 수 없습니다.');
+
+    if (data.error) {
+      appendChatMsg('ai', 'AI 응답을 일시적으로 받을 수 없습니다. 이메일로 문의해 주시면 빠르게 안내드리겠습니다.');
+      appendEmailBtn(msg);
+    } else {
+      appendChatMsg('ai', data.reply);
+      if (data.needsEmail) appendEmailBtn(msg);
+    }
   } catch (e) {
     document.getElementById('chat-typing')?.remove();
-    appendChatMsg('ai', '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+    appendChatMsg('ai', '네트워크 오류가 발생했습니다. 이메일로 문의해 주세요.');
+    appendEmailBtn(msg);
   }
 
   sendBtn.disabled = false;
